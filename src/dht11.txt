@@ -1,0 +1,31 @@
+#include <Arduino.h>
+#include <Ticker.h>
+#include <esp32DHT.h>
+
+Ticker ticker;
+DHT11 sensor;
+// DHT11 sensor;  // DHT11 also works!
+
+void readDHT() {
+  sensor.read();
+}
+float t, h;
+void setup() {
+  Serial.begin(115200);
+  sensor.setup(4);  // pin 23 is DATA, RMT channel defaults to channel 0 and 1
+  sensor.onData([](float humidity, float temperature) {
+    Serial.printf("Temp: %g°C\nHumid: %g%%\n", temperature, humidity);
+    t = temperature;
+    h = humidity;
+  });
+  
+  ticker.attach(1, readDHT);
+}
+
+void loop() {
+  // Serial.println(String(sensor._getHumidity()));
+  // Serial.println(String(sensor._getTemperature()));
+  // delay(1000);
+  readDHT();
+  delay(1000);
+}

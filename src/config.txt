@@ -1,0 +1,36 @@
+/*
+Author : Dung Nguyen 
+
+  @ RFID 
+  18 : SCK
+  19 : MISO
+  4 : SDA
+  5 : RST
+  23 : MOSI
+  2  : LED
+
+  @ DHT11
+  32 : DATA
+
+  @ LCD 1602
+  21 : SDA
+  22 : SCL
+
+  @ servo
+  13 : SERVO_PIN
+
+  @ LED
+  34 : LED1
+  35 : LED2
+  32 : LED3
+
+  @button
+
+  @ MOTOR
+  18 : MOTOR_PIN
+
+
+*/
+
+ @ firebase
+ 
