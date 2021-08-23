@@ -1,3 +1,5 @@
+
+// add library
 #include <Arduino.h>
 #include <WiFi.h>
 #include <FirebaseESP32.h>
@@ -33,11 +35,15 @@
 #define FB_HOST "rfid-bighomework-default-rtdb.firebaseio.com" // ten project
 #define FB_Authen "OWSMnS9FT5FegZdbq3sgdezel3O9qnb0IuJpYuaC"   // authen
 
+// cấu hình để lấy thời gian ngày giơ online
 const char *ntpServer = "asia.pool.ntp.org";
 const long gmtOffset_sec = 7 * 3600;
 const int daylightOffset_sec = 0;
+
+// khởi tạo servo
 Servo myservo;
 
+// struct lưu trạng thái devices
 struct
 {
     bool LED1_status = 0;
@@ -52,16 +58,19 @@ struct
     bool door;
 } smarthome;
 
+// khởi tạo object cho LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
+// khởi tạo RFID
 MFRC522 rfid(RFID_SDA, RFID_RST); // Instance of the class
 MFRC522::MIFARE_Key key;
 
 StaticJsonDocument<200> ajson;
 FirebaseData data;
-FirebaseJson json;
+FirebaseJson json; // file json s = {"name" : "Long"} , s["name"]
+
 String date_n, time_n, sum_time;
-bool doorOpen = false;
+// bool doorOpen = false;
 
 DHT dht(DHT11pin, DHT11);
 
@@ -83,6 +92,8 @@ float dht11_t = 0, dht11_h = 0;
 void setup()
 {
     Serial.begin(115200);
+
+    // để kết nối wifi
     WiFi.begin("Dung Manh", "dungmanh123");
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -111,6 +122,8 @@ void setup()
     }
 
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+
+    // khi quẹt thẻ RFID thì LED2 trên ESP32 nháy, báo hiệu có thẻ được quẹt
     pinMode(2, OUTPUT);
 
     myservo.attach(SERVOpin);
@@ -125,6 +138,8 @@ void setup()
     // pinMode(LED1pin, OUTPUT);
 
 }
+
+// sử dụng timer để nhận, gửi dữ liệu từ firebase và đọc cảm biến DHT
 unsigned int t_delay_1 = millis();
 unsigned int t_delay_2 = millis();
 
@@ -132,7 +147,9 @@ void loop()
 {
     if (millis() - t_delay_1 > 1000)
     {
+        // nhận dữ liệu từ firebase
         receive_firebase_status_device();
+        // điều khiển thiết bị smarthome
         device_control();
         t_delay_1 = millis();
     }
@@ -141,13 +158,16 @@ void loop()
 
         dht11_t = dht.readTemperature();
         dht11_h = dht.readHumidity();
+        // gửi dữ liệu lên firebase
         send_dht11();
         t_delay_2 = millis();
     }
     //  readDHT();
+    // check xem có ai quẹt, check liên tục
     check_rfid();
 }
 
+// nhận dữ liệu từ firebase
 void receive_firebase_status_device()
 {
     if (Firebase.getJSON(data, "/Device"))
@@ -174,6 +194,7 @@ void receive_firebase_status_device()
     }
 }
 
+// điều khiển thiết bị
 void device_control()
 {
     if (smarthome.LCD_status)
@@ -194,6 +215,7 @@ void device_control()
     else myservo.write(20);
 }
 
+// lấy thời gian online từ web bằng internet
 void get_datetime()
 {
     struct tm timeinfo;
@@ -211,6 +233,7 @@ void get_datetime()
     Serial.println(time_n);
 }
 
+// gửi thông tin người quẹt thẻ lên firebase
 void send_rfid(String ID)
 {
     //  String pat = "/Deviot/" + ID + "/Work-Time/" + date_n + "/" + String(t);
@@ -242,6 +265,7 @@ void send_rfid(String ID)
     // }
 }
 
+// check xem có ai quẹt thẻ không
 void check_rfid()
 {
     // kiem tra xem co the nao duoc quet khong
@@ -274,6 +298,8 @@ void check_rfid()
 
         myservo.write(smarthome.door ? 20 : 120);
         smarthome.door = !smarthome.door;
+        String path = "/Device/door";
+        Firebase.set(data, path, smarthome.door);
 
         send_rfid(UID);
 
@@ -285,6 +311,7 @@ void check_rfid()
     }
 }
 
+// gửi dữ liệu DHT11 lên firebase
 void send_dht11()
 {
     String path = "/DHT11/humidity";
